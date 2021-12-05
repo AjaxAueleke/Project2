@@ -86,29 +86,70 @@ mov eax,fileHandle2
 call CloseFile
 ;--------------------------------------
 
+INVOKE Str_length, ADDR buffer
+mWrite "FILE 1 SIZE BEFORE TRIMMING : "
+call WriteDec
+call crlf
+cmp eax, 0
+je zeroFileSize
+INVOKE Str_length, ADDR buffer2
+mWrite "FILE 2 SIZE BEFORE TRIMMING : "
+call WriteDec
+call crlf
+cmp eax, 0
+je zeroFileSize
+
+
 ; Cleaning the buffers from trailing spaces
 
 INVOKE Str_trim, ADDR buffer, ' '
-mWriteString offset buffer
-call crlf
+INVOKE Str_trim, ADDR buffer2, ' '
+INVOKE Str_trim, ADDR buffer, 0ah
+INVOKE Str_trim, ADDR buffer, 0dh
+INVOKE Str_trim, ADDR buffer2, 0ah
+INVOKE Str_trim, ADDR buffer2, 0dh
+
 INVOKE Str_length, ADDR buffer
+mov ecx, eax
+inc ecx
+L1:
+	INVOKE Str_trim, ADDR buffer, ' '
+	INVOKE Str_trim, ADDR buffer, 0ah
+	INVOKE Str_trim, ADDR buffer, 0dh
+loop l1
+
+INVOKE Str_length, ADDR buffer
+mov ecx, eax
+inc ecx
+
+L2:
+	INVOKE Str_trim, ADDR buffer2, ' '
+	INVOKE Str_trim, ADDR buffer2, 0ah
+	INVOKE Str_trim, ADDR buffer2, 0dh
+
+loop L2
+
+INVOKE Str_length, ADDR buffer
+mWrite "FILE 1 SIZE AFTER TRIMMING : "
 call WriteDec
+call crlf
+cmp eax, 0
+je zeroFileSize
+INVOKE Str_length, ADDR buffer2
+mWrite "FILE 2 SIZE AFTER TRIMMING : "
+call WriteDec
+call crlf
+cmp eax, 0
+je zeroFileSize
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+exit
+zeroFileSize:
+mWrite "One of the files is empty so can't check for plagiarism"
+call crlf
 exit
 main ENDP
 END main
