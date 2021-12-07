@@ -10,6 +10,9 @@ filename2 BYTE 80 DUP(0)
 fileHandle2 HANDLE ?
 fileSize1 dword ?
 fileSize2 dword ?
+string1 byte 5000 DUP(0)
+string2 byte 5000 DUP(0)
+counter dword 0
 .code
 main PROC
 
@@ -112,6 +115,7 @@ INVOKE Str_trim, ADDR buffer2, 0dh
 INVOKE Str_length, ADDR buffer
 mov ecx, eax
 inc ecx
+
 L1:
 	INVOKE Str_trim, ADDR buffer, ' '
 	INVOKE Str_trim, ADDR buffer, 0ah
@@ -126,8 +130,14 @@ L2:
 	INVOKE Str_trim, ADDR buffer2, ' '
 	INVOKE Str_trim, ADDR buffer2, 0ah
 	INVOKE Str_trim, ADDR buffer2, 0dh
-
 loop L2
+
+
+
+
+
+
+
 
 INVOKE Str_length, ADDR buffer
 mWrite "FILE 1 SIZE AFTER TRIMMING : "
@@ -137,15 +147,43 @@ cmp eax, 0
 je zeroFileSize
 INVOKE Str_length, ADDR buffer2
 mWrite "FILE 2 SIZE AFTER TRIMMING : "
+
+
+
 call WriteDec
 call crlf
 cmp eax, 0
 je zeroFileSize
 
-
-
-
-
+INVOKE Str_length, ADDR buffer
+mov ecx, eax
+mov ebx, 0 ; ebx is used as index for the buffer in the following loop
+L3:
+	push ecx
+	;ebx is used an index for string
+	mov esi, 0
+	extracting_words:
+	.IF buffer[ebx] == ' ' || buffer[ebx] ==  ',' || buffer[ebx] == ':' || buffer[ebx] == ';' || buffer[ebx] == '.' || buffer[ebx] == 0dh || buffer[ebx] == 0ah
+		mWriteString offset string1
+		mov esi, 0
+		mov ecx, 1
+	.ELSE
+	push eax
+	mov al, buffer[ebx]
+	mov string1[esi], al
+	pop eax
+	inc esi
+	.ENDIF
+	
+	loop extracting_words
+	inc ebx
+	;INVOKE Str_length, ADDR buffer2
+	;mov eax, ecx
+	;L4:
+		
+	;loop L4
+	pop ecx
+loop L3
 exit
 zeroFileSize:
 mWrite "One of the files is empty so can't check for plagiarism"
