@@ -13,6 +13,9 @@ fileSize2 dword ?
 string1 byte 5000 DUP(0)
 string2 byte 5000 DUP(0)
 counter dword 0
+
+first_word_count dword 0
+second_word_count dword 0
 .code
 main PROC
 
@@ -148,46 +151,56 @@ je zeroFileSize
 INVOKE Str_length, ADDR buffer2
 mWrite "FILE 2 SIZE AFTER TRIMMING : "
 
-
-
 call WriteDec
 call crlf
 cmp eax, 0
 je zeroFileSize
-
+; replacing spaces, colon, semi-colon, commas, and fullstop with 0
 INVOKE Str_length, ADDR buffer
 mov ecx, eax
-mov ebx, 0 ; ebx is used as index for the buffer in the following loop
-L3:
-	push ecx
-	;ebx is used an index for string
-	mov esi, 0
-	extracting_words:
-	.IF buffer[ebx] == ' ' || buffer[ebx] ==  ',' || buffer[ebx] == ':' || buffer[ebx] == ';' || buffer[ebx] == '.' || buffer[ebx] == 0dh || buffer[ebx] == 0ah
-		mWriteString offset string1
-		mov esi, 0
-		mov ecx, 1
-	.ELSE
+mov esi, 0
+replace:
 	push eax
-	mov al, buffer[ebx]
-	mov string1[esi], al
-	pop eax
-	inc esi
-	.ENDIF
-	
-	loop extracting_words
-	inc ebx
-	;INVOKE Str_length, ADDR buffer2
-	;mov eax, ecx
-	;L4:
-		
-	;loop L4
-	pop ecx
-loop L3
+	mov eax, 0
+
+	mov al, ' '
+	cmp buffer[esi], al
+	je replacing
+	mov al, ','
+	cmp buffer[esi], al
+	je replacing
+	mov al, ';'
+	cmp buffer[esi], al
+	je replacing
+	mov al, ':'
+	cmp buffer[esi], al
+	je replacing
+	mov al, '.'
+	cmp buffer[esi], al
+	je replacing
+after_replaced: inc esi
+pop eax
+loop replace
+mWriteString offset buffer
+call crlf
+mov eax, 0
+mov eax, first_word_count
+call WriteDec
 exit
 zeroFileSize:
 mWrite "One of the files is empty so can't check for plagiarism"
 call crlf
+exit
+
+replacing:
+	mov buffer[esi], 0
+	push ebx
+	mov ebx, 0
+	mov ebx, first_word_count
+	inc ebx
+	mov first_word_count, ebx 
+	pop ebx
+	jmp after_replaced
 exit
 main ENDP
 END main
