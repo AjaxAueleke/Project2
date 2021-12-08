@@ -16,6 +16,7 @@ counter dword 0
 
 first_word_count dword 0
 second_word_count dword 0
+similar_words dword 0
 .code
 main PROC
 
@@ -110,8 +111,10 @@ je zeroFileSize
 
 INVOKE Str_trim, ADDR buffer, ' '
 INVOKE Str_trim, ADDR buffer2, ' '
+INVOKE str_trim, ADDR buffer2, '.'
 INVOKE Str_trim, ADDR buffer, 0ah
 INVOKE Str_trim, ADDR buffer, 0dh
+INVOKE str_trim, ADDR buffer, '.'
 INVOKE Str_trim, ADDR buffer2, 0ah
 INVOKE Str_trim, ADDR buffer2, 0dh
 
@@ -123,6 +126,7 @@ L1:
 	INVOKE Str_trim, ADDR buffer, ' '
 	INVOKE Str_trim, ADDR buffer, 0ah
 	INVOKE Str_trim, ADDR buffer, 0dh
+	INVOKE Str_trim, ADDR buffer, '.'
 loop l1
 
 INVOKE Str_length, ADDR buffer
@@ -133,6 +137,7 @@ L2:
 	INVOKE Str_trim, ADDR buffer2, ' '
 	INVOKE Str_trim, ADDR buffer2, 0ah
 	INVOKE Str_trim, ADDR buffer2, 0dh
+	INVOKE Str_trim, ADDR buffer2, '.'
 loop L2
 
 
@@ -162,36 +167,110 @@ mov esi, 0
 replace:
 	push eax
 	mov eax, 0
-
 	mov al, ' '
 	cmp buffer[esi], al
 	je replacing
+	mov al, 0ah
+	cmp buffer[esi], al
+	je replacing
+	mov al, 0dh
+	cmp buffer[esi], al
+	je replacing_without_count
 	mov al, ','
 	cmp buffer[esi], al
-	je replacing
+	je replacing_without_count
 	mov al, ';'
 	cmp buffer[esi], al
-	je replacing
+	je replacing_without_count
 	mov al, ':'
 	cmp buffer[esi], al
-	je replacing
+	je replacing_without_count
 	mov al, '.'
 	cmp buffer[esi], al
-	je replacing
+	je replacing_without_count
 after_replaced: inc esi
 pop eax
 loop replace
-mWriteString offset buffer
-call crlf
+
+INVOKE Str_length, ADDR buffer2
+mov ecx, eax
+mov esi, 0
+replace2:
+	push eax
+	mov eax, 0
+	mov al, ' '
+	cmp buffer2[esi], al
+	je replacing2
+	mov al, 0ah
+	cmp buffer2[esi], al
+	je replacing2
+	mov al, 0dh
+	cmp buffer2[esi], al
+	je replacing_without_count2
+	mov al, ','
+	cmp buffer2[esi], al
+	je replacing_without_count2
+	mov al, ';'
+	cmp buffer2[esi], al
+	je replacing_without_count2
+	mov al, ':'
+	cmp buffer2[esi], al
+	je replacing_without_count2
+	mov al, '.'
+	cmp buffer2[esi], al
+	je replacing_without_count2
+after_replaced2: inc esi
+pop eax
+loop replace2
+
+
+; printing words 1 by 1
+push ecx
+mov ecx, first_word_count
+inc ecx
+mov esi, 0
+checkingwords:
+	mov edx, offset buffer
+	after_increment:
+	cmp buffer[esi], 0
+	je increment_esi
+	add edx, esi
+	mov ebx, 0
+	push ecx
+	checkingwords2:
+		mov eax, offset buffer2
+		after_increment2:
+		cmp buffer2[ebx], 0
+		je increment_ebx
+		add eax, ebx
+		INVOKE Str_compare, eax, edx
+		je increment_similar
+		after_increment_similar:
+	loop checkingwords
+	pop ecx
+	call crlf
+	INVOKE Str_length, ADDR buffer2[esi]
+	add esi, eax
+loop checkingwords 
+pop ecx
 mov eax, 0
 mov eax, first_word_count
 call WriteDec
+call crlf
+mov eax, second_word_count
+call WriteDec
+call crlf
+mov eax, similar_words
+call WriteDec
+call crlf
 exit
 zeroFileSize:
 mWrite "One of the files is empty so can't check for plagiarism"
 call crlf
 exit
-
+replacing_without_count:
+	mov buffer[esi], 0
+jmp after_replaced
 replacing:
 	mov buffer[esi], 0
 	push ebx
@@ -200,7 +279,38 @@ replacing:
 	inc ebx
 	mov first_word_count, ebx 
 	pop ebx
-	jmp after_replaced
+jmp after_replaced
 exit
+
+replacing_without_count2:
+	mov buffer2[esi], 0
+jmp after_replaced2
+replacing2:
+	mov buffer2[esi], 0
+	push ebx
+	mov ebx, 0
+	mov ebx, second_word_count
+	inc ebx
+	mov second_word_count, ebx 
+	pop ebx
+jmp after_replaced2
+exit
+
+increment_esi:
+	inc esi
+jmp after_increment
+exit
+increment_ebx:
+	inc ebx
+jmp after_increment2
+exit
+increment_similar:
+	push eax
+	mov eax, 0
+	mov eax, similar_words
+	inc eax
+	mov similar_words, eax
+	pop eax
+jmp after_increment_similar
 main ENDP
 END main
