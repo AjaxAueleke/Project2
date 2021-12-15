@@ -230,28 +230,52 @@ mov ecx, first_word_count
 inc ecx
 mov esi, 0
 checkingwords:
+
 	mov edx, offset buffer
 	after_increment:
 	cmp buffer[esi], 0
 	je increment_esi
 	add edx, esi
+	push eax
+	mov eax, ecx
+	call WriteDec
+	pop eax
+	mWrite " First File : "
+	call WriteString
+	call crlf
 	mov ebx, 0
 	push ecx
+	mov ecx, second_word_count
 	checkingwords2:
 		mov eax, offset buffer2
 		after_increment2:
 		cmp buffer2[ebx], 0
 		je increment_ebx
 		add eax, ebx
-		INVOKE Str_compare, eax, edx
+		push edx
+			mov edx, eax
+			push eax
+			mov eax, ecx
+			call WriteDec
+			pop eax
+			mWrite " Second File : "
+			call WriteString
+			call crlf
+		pop edx
+		INVOKE Str_compare, ADDR buffer2[ebx], ADDR buffer[esi]
 		je increment_similar
 		after_increment_similar:
-	loop checkingwords
+
+		INVOKE Str_length, ADDR buffer2[ebx]
+		add ebx, eax
+		loop checkingwords2
 	pop ecx
-	call crlf
-	INVOKE Str_length, ADDR buffer2[esi]
+	INVOKE Str_length, ADDR buffer[esi]
 	add esi, eax
-loop checkingwords 
+dec ecx
+cmp ecx, 0
+jne checkingwords
+
 pop ecx
 mov eax, 0
 mov eax, first_word_count
@@ -311,6 +335,8 @@ increment_similar:
 	inc eax
 	mov similar_words, eax
 	pop eax
+	mWrite "SIMILAR\n"
+	call crlf
 jmp after_increment_similar
 main ENDP
 END main
